@@ -1,5 +1,6 @@
 import numpy as np
 import cv2
+from matplotlib import pyplot as plt
 
 
 class Board:
@@ -16,15 +17,27 @@ class Board:
         self.black = 100
 
     def get_homography(self, img):
-        sift = cv2.SIFT_create()
+
+        akaze = cv2.AKAZE_create()
         # find the keypoints and descriptors with SIFT
-        kp1, des1 = sift.detectAndCompute(self.reference, None)
-        kp2, des2 = sift.detectAndCompute(img, None)
+        kp1, des1 = akaze.detectAndCompute(self.reference, None)
+        kp2, des2 = akaze.detectAndCompute(img, None)
+        print("des1: ", des1.dtype)
+        print("des2: ", des2.dtype)
+        if des1.dtype != "float32":
+            des1 = des1.astype("float32")
+        if des2.dtype != "float32":
+            des2 = des2.astype("float32")
+        print("des1: ", des1.dtype)
+        print("des2: ", des2.dtype)
+        #des2 = np.float32(des2)
         FLANN_INDEX_KDTREE = 1
         index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
         search_params = dict(checks=50)
         flann = cv2.FlannBasedMatcher(index_params, search_params)
+
         matches = flann.knnMatch(des1, des2, k=2)
+        print(matches)
         # store all the good matches as per Lowe's ratio test.
         good = []
 
@@ -163,8 +176,8 @@ if __name__ == "__main__":
     reference_img = cv2.imread('../img/chess_board_straighten.jpg')
     board = Board(reference_img)
 
-    img_with_board = cv2.imread('../img/Checkers_pieces_3.jpg')
+    img_with_board = cv2.imread('../img/checkers_pieces_4.jpg')
 
-    print(board.digitalized_board(img_with_board, False))
+    print(board.digitalized_board(img_with_board, True))
 
     print(board)
