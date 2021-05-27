@@ -120,7 +120,7 @@ class Board:
                 piece.set_can_jump(False)
                 self.check_jump(piece)
 
-    def check_jump(self, piece, board):
+    def check_jump(self, piece): # board -> extra argument
         if piece.color == RED:
             for move in piece.valid_moves:
                 if move in self.black_pieces:
@@ -130,10 +130,10 @@ class Board:
                             if piece not in self.valid_pieces:
                                 self.valid_pieces.append(piece)
                             piece.add_next_move([n_move, move])
-                            temp_board = deepcopy(board)
-                            temp_piece = piece.move(n_move)
-                            temp_board.red_pieces.append(temp_piece)
-                            self.check_jump(temp_piece, temp_board)
+                            #temp_board = deepcopy(board)
+                            #temp_piece = piece.move(n_move)
+                            #temp_board.red_pieces.append(temp_piece)
+                            #self.check_jump(temp_piece, temp_board)
                             piece.set_can_jump(True)
             return
 
