@@ -1,5 +1,7 @@
 from checkers_logic.game import Game
 from checkers_logic.minimax import minimax
+from robot_movement.inverse_kinematics import IK
+from digital_board.digital_board import DigitalBoard
 
 RED = "red"
 BLACK = "black"
@@ -29,6 +31,7 @@ def main():
     pieces.append(black)
     pieces.append(red)
     game = Game(pieces)
+    dofbot = IK()
 
     while run:
 
@@ -37,9 +40,13 @@ def main():
             run = False
 
         if game.turn == RED:
-            evalu, new_board = minimax(game.board, 6, True, game)
+            evalu, move = minimax(game.board, 5, True, game)
+            new_board = move[0]
+            piece = move[1]
+            n_move = move[2]
             print("eval: ", evalu)
             game.ai_move(new_board)
+            dofbot.movePiece([piece.y, piece.x], n_move)
             print(game.board)
 
         else:
