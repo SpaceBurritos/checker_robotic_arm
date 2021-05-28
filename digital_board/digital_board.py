@@ -3,7 +3,7 @@ import cv2
 from matplotlib import pyplot as plt
 
 
-class DigitalBoard:
+class Board:
 
     def __init__(self, img):
         self.reference = img
@@ -15,6 +15,14 @@ class DigitalBoard:
         self.cols = []
         self.red = 130
         self.black = 100
+
+    def stitch_images(self, img, img2):
+        stitcher = cv2.Stitcher_create()
+        img = img[20:380, 20:725]
+        img2 = img2[150:-6, 367:-10]
+        status, stitched = stitcher.stitch((img, img2))
+        cv2.imshow("stitches", stitched)
+        cv2.waitKey(0)
 
     def get_homography(self, img):
 
@@ -30,7 +38,7 @@ class DigitalBoard:
             des2 = des2.astype("float32")
         print("des1: ", des1.dtype)
         print("des2: ", des2.dtype)
-        #des2 = np.float32(des2)
+        # des2 = np.float32(des2)
         FLANN_INDEX_KDTREE = 1
         index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
         search_params = dict(checks=50)
@@ -148,7 +156,7 @@ class DigitalBoard:
     def __str__(self):
         rows = " x  0  1  2  3  4  5  6  7 \n"
         for yp in range(8):
-            rows +=  " " + str(yp) + " "
+            rows += " " + str(yp) + " "
             for xp in range(8):
                 if [yp, xp] in self.black_pieces_pos:
                     rows += " B "
@@ -177,7 +185,8 @@ if __name__ == "__main__":
     board = Board(reference_img)
 
     img_with_board = cv2.imread('../img/checkers_pieces_4.jpg')
-
-    print(board.digitalized_board(img_with_board, True))
-
-    print(board)
+    img_1 = cv2.imread('../img/left_side.png')
+    img_2 = cv2.imread('../img/right_side.png')
+    #print(board.digitalized_board(img_with_board, True))
+    board.stitch_images(img_1, img_2)
+    #print(board)
