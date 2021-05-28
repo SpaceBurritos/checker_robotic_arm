@@ -15,7 +15,7 @@ class Board:
         self.black_pieces = [Piece(piece, BLACK) for piece in pieces[0]]
         self.red_pieces = [Piece(piece, RED) for piece in pieces[1]]
         self.valid_pieces = []
-        self.valid_moves = {}
+        #self.valid_moves = {}
         self.color = color
         self.num_red = len(self.red_pieces)
         self.num_black = len(self.black_pieces)
@@ -24,6 +24,7 @@ class Board:
         self.win = None
         self.board = self.draw_board()
         self.possible_moves(color)
+        self.is_jumping = False
 
     def draw_board(self):
         row = ['-' for i in range(8)]
@@ -72,10 +73,18 @@ class Board:
     def remove(self, piece, color):
         if color == RED:
             if piece in self.red_pieces:
+                if piece.king:
+                    self.red_kings -= 1
                 self.red_pieces.remove(piece)
+                self.num_red = len(self.red_pieces)
+
+                
         elif color == BLACK:
             if piece in self.black_pieces:
+                if piece.king:
+                    self.black_kings -= 1
                 self.black_pieces.remove(piece)
+                self.num_black = len(self.black_pieces)
 
     def possible_moves(self, color):
         self.valid_pieces = []
@@ -83,8 +92,9 @@ class Board:
         [piece.del_next_moves() for piece in self.black_pieces]
         self.check_jumps(color)
         if len(self.valid_pieces) > 0:  # If there are jumps the only possible moves are the jumps
-            return
+            self.is_jumping = True
         else:
+            self.is_jumping = False
             if color == RED:
                 for piece in self.red_pieces:
                     moves = piece.valid_moves
@@ -105,7 +115,7 @@ class Board:
                 print("Color not available")
 
     '''
-    Generating all the possible jumps, including multiple jumps on a same turm
+    Generating all the possible jumps
     :param
     color = string -> color of the pieces
     '''
@@ -130,10 +140,6 @@ class Board:
                             if piece not in self.valid_pieces:
                                 self.valid_pieces.append(piece)
                             piece.add_next_move([n_move, move])
-                            #temp_board = deepcopy(board)
-                            #temp_piece = piece.move(n_move)
-                            #temp_board.red_pieces.append(temp_piece)
-                            #self.check_jump(temp_piece, temp_board)
                             piece.set_can_jump(True)
             return
 
@@ -148,10 +154,47 @@ class Board:
                             piece.add_next_move([n_move, move])
                             piece.set_can_jump(True)
 
-    def get_key(self, pos):
-        y, x = pos
-        return y*7 + x
-
+    def compare_boards_and_move(self, img_board):
+        b_pieces = self.black_pieces
+        r_pieces = self.red_pieces
+        r_leftover = []
+        n_move = []
+        # Checks the differences between the black pieces, to get the piece that was moved
+        # and where it moved
+        for i, b in enumerate(img_board.black_pieces):
+            if b not in b_pieces:
+                n_move.append([b.y, b.x])
+            else:
+                del b_pieces[i]
+        #   Checks the difference between the red pieces, to search if any red pieceS were
+        #   removed
+        for i, r in enumerate(img_board.red_pieces):
+            if r in r_pieces:
+                del r_pieces[i]
+            else:
+                r_leftover.append(r)
+                
+        if len(b_pieces) != 1 or len(n_move) != 1 :
+            print("More than one piece was moved")
+            return False
+        else:
+            pos = [b_pieces[0].y, b_pieces[0].x]
+            piece = self.get_piece(pos[0], pos[1], BLACK)
+            if len(r_pieces) == 0 and len(r_leftover) == 0:
+                self.move(piece, n_move[0])
+            elif len(r_pieces) > 0 and len(r_leftover) > 1:
+                print("There is something fishy")
+            elif piece.can_jump:
+                while piece.can_jump:
+                    jump_moves = np.array(piece.next_moves)
+                    jump = [x for x in piece.next_moves if r_leftover == x[1]]
+                    self.move(piece, jump[0])
+                    piece2 = self.get_piece(jump[1][0], jump[1][1], RED)
+                    self.remove(piece2, RED)
+                    self.possible_moves(BLACK)
+            else:
+                print("no moves available")
+    
     def winner(self):
         if self.black_pieces == 0:
             self.win = BLACK
@@ -193,8 +236,8 @@ class Board:
 
     def evaluate(self):
         #return self.num_red - self.num_black + (self.red_kings * 2 - self.black_kings * 2)
-        return sum([7 - r.y + 5 for r in self.red_pieces if not r.king]) - sum([b.y + 5 for b in self.black_pieces if not b.king]) +\
-            sum([7 - r.y + 7 for r in self.red_pieces if r.king]) - sum([b.y + 7 for b in self.black_pieces if b.king])
+        return sum([7 - r.y for r in self.red_pieces if not r.king]) - sum([b.y for b in self.black_pieces if not b.king]) +\
+            8*self.red_kings - 8*self.black_kings
 
 if __name__ == "__main__":
     pieces = [[[1, 3], [1, 5], [3, 1], [3, 3], [2, 0], [3, 5], [2, 4]],

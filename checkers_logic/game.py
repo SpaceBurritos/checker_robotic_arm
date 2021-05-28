@@ -14,28 +14,20 @@ class Game:
         self.valid_moves = []
         # self.win = win
 
-    def _init(self):
-        self.selected = None
-        self.board = Board()
-        self.turn = RED
-        self.valid_moves = []
-
-    def reset(self):
-        self._init()
-
     def get_board(self):
         return self.board
 
     def change_turn(self):
         self.valid_moves = []
-        #if self.selected.can_jump:
-        #    return
+        if self.selected.can_jump:
+            self.board.possible_moves(self.turn)
+            return
         if self.turn == RED:
             self.turn = BLACK
             self.board.possible_moves(self.turn)
         elif self.turn == BLACK:
             self.turn = RED
-            self.board.possible_moves(RED)
+            self.board.possible_moves(self.turn)
 
     def move(self, pos):
         if self.selected:
@@ -63,10 +55,14 @@ class Game:
     def draw_valid_moves(self, piece):
         self.board.draw_piece_moves(piece)
 
-    def ai_move(self, board):
-        self.board = board
+    def ai_move(self, piece, pos):
+        print("piece: ", piece)
+        self.selected = piece
+        self.move(pos)
         self.board.draw_board()
         self.change_turn()
+        
+
 
     def winner(self):
         return self.board.winner()

@@ -67,7 +67,7 @@ class Piece:
             print("There is no skipped position")
 
     def __eq__(self, other):
-        return other == [self.y, self.x]
+        return [other.y, other.x] == [self.y, self.x]
 
     def __str__(self):
         return "[" + str(self.y) + ", " + str(self.x) + "]"

@@ -3,7 +3,7 @@ import cv2
 from matplotlib import pyplot as plt
 
 
-class Board:
+class DigitalBoard:
 
     def __init__(self, img):
         self.reference = img
