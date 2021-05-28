@@ -40,13 +40,18 @@ def main():
             run = False
 
         if game.turn == RED:
-            evalu, move = minimax(game.board, 5, True, game)
+            evalu, move = minimax(game.board, 4, True)
             new_board = move[0]
             piece = move[1]
-            n_move = move[2]
+            n_move = move[2][0]
+            print(piece, n_move)
+            print(n_move)
             print("eval: ", evalu)
-            game.ai_move(new_board)
-            dofbot.movePiece([piece.y, piece.x], n_move)
+            if piece.can_jump:
+                dofbot.jumpPiece([piece.y, piece.x], n_move)
+            else:
+                dofbot.movePiece([piece.y, piece.x], n_move)
+            game.ai_move(piece, n_move)
             print(game.board)
 
         else:
