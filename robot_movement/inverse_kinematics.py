@@ -7,12 +7,15 @@ import time
 import numpy as np
 import math
 
-DIST_ROBOT2BOARD = 0.103
-BOARD_SQR_Y = 0.02775
-BOARD_SQR_X = 0.0293
-DIFF_HEIGHT = 0.033 #0.007
+DIST_ROBOT2BOARD = 0.07#0.103
+BOARD_SQR_Y = 0.0354 #0.0345
+BOARD_SQR_X = 0.0354 #0.0293
+DIFF_HEIGHT = -0.0075 #0.007
 OPEN_GRIPPER = 120
 CLOSE_GRIPPER = 169
+TIME = 2500
+TIME_GRIPPER = 500
+TIME_JUMP = 1000
 
 class IK:
     def __init__(self):
@@ -22,8 +25,11 @@ class IK:
         self.joints = []
         self.is_closed = False
         self.gripper = OPEN_GRIPPER
-        self.standby_pose = [90,135,0,0,90,self.gripper]
-
+        self.standby_pose = [90,180,0,0,90,self.gripper]
+    
+    def set_initial_pose(self):
+        self.dofbot.Arm_serial_servo_write6_array(self.standby_pose, TIME)
+    
     def plan(self):
         self.joints = self.urdf.inverse_kinematics(self.target)
 
@@ -35,10 +41,12 @@ class IK:
 
     def set_target_from_board(self, pos):
         #  pos = [y, x]
-        sqr_center = BOARD_SQR_X / 2
-        y = DIST_ROBOT2BOARD + sqr_center + BOARD_SQR_Y * (7 - pos[0])
-        x = (sqr_center + BOARD_SQR_X * (pos[1] - 4))
-        z = (DIFF_HEIGHT)*math.exp((7-pos[0])*0.06)#DIFF_HEIGHT+(7-pos[0])*0.0029
+        sqr_center_x = BOARD_SQR_X / 2
+        sqr_center_y = BOARD_SQR_Y / 2
+        z_val = 0.0005
+        y = DIST_ROBOT2BOARD + sqr_center_y + BOARD_SQR_Y * (pos[0])
+        x = (sqr_center_x + BOARD_SQR_X * (3 - pos[1]))
+        z = DIFF_HEIGHT + 0.0027*pos[0]#(z_val)*math.exp((pos[0])*0.68)#DIFF_HEIGHT+(7-pos[0])*0.0029
         self.target = [x,y, z]
         
     def changeGripper(self):
@@ -57,13 +65,13 @@ class IK:
         else:
             self.joints.append(270)
         self.joints.append(self.gripper)
-        self.dofbot.Arm_serial_servo_write6_array(self.joints, 2000)
-        time.sleep(2)
+        self.dofbot.Arm_serial_servo_write6_array(self.joints, TIME)
+        time.sleep(TIME/1000)
         self.changeGripper()
-        self.dofbot.Arm_serial_servo_write(6, self.gripper, 500)
-        time.sleep(1)
-        self.dofbot.Arm_serial_servo_write6_array(self.standby_pose, 2000)
-        time.sleep(2)
+        self.dofbot.Arm_serial_servo_write(6, self.gripper, TIME_GRIPPER)
+        time.sleep(TIME_GRIPPER/1000 + 0.5)
+        self.dofbot.Arm_serial_servo_write6_array(self.standby_pose, TIME)
+        time.sleep(TIME/1000)
         
     def planAndExecute(self, pos):
         self.set_target_from_board(pos)
@@ -79,12 +87,12 @@ class IK:
         jump_y = (pos1[0] + pos2[0])/2
         jump_x = (pos1[1] + pos2[1])/2
         self.planAndExecute([jump_y, jump_x])
-        self.dofbot.Arm_serial_servo_write6_array([30,45,90,90,90,self.gripper], 1000)
+        self.dofbot.Arm_serial_servo_write6_array([30,45,90,90,90,self.gripper], TIME_JUMP)
         time.sleep(1)
         self.changeGripper()
-        self.dofbot.Arm_serial_servo_write(6, self.gripper, 500)
+        self.dofbot.Arm_serial_servo_write(6, self.gripper, TIME_GRIPPER)
         time.sleep(1)
-        self.dofbot.Arm_serial_servo_write6_array(self.standby_pose, 1000)
+        self.dofbot.Arm_serial_servo_write6_array(self.standby_pose, TIME_JUMP)
         time.sleep(1)
         
     def make_king(self, pos1, pos2):
@@ -99,8 +107,10 @@ class IK:
 
 if __name__ == "__main__":
     move = IK()
-    move.make_king([1,0],[0,1])
-
-    #move.movePiece([7,4],[0,1])
-    #move.movePiece([0,1],[6,5])
+    move.movePiece([0,1],[7,0])
+    move.movePiece([1,4],[5,3])
+    move.movePiece([1,6],[6,7])
+    move.movePiece([7,0],[0,1])
+    move.movePiece([5,3],[1,4])
+    move.movePiece([6,7],[1,6])
     #move.jumpPiece([6,6])
