@@ -1,7 +1,13 @@
+
+
 from checkers_logic.game import Game
 from checkers_logic.minimax import minimax
 from robot_movement.inverse_kinematics import IK
 from digital_board.digital_board import DigitalBoard
+from digital_board.camera import Camera
+from boardFinder.main import detect
+from checkers_logic.board import Board
+import cv2
 
 RED = "red"
 BLACK = "black"
@@ -18,67 +24,69 @@ def check_positions(x, y, valid_positions):
 
 
 def main():
+    
     run = True
-    pieces = []
-    red = []
-    black = []
-    for y in range(3):
-        for x in range(8):
-            if (x + y) % 2 != 0:
-                black.append([y, x])
-            if (7 - y + x) % 2 != 0:
-                red.append([7 - y, x])
-    pieces.append(black)
-    pieces.append(red)
-    game = Game(pieces)
     dofbot = IK()
+    dofbot.set_initial_pose()
+    cam = Camera()
+    print("Please take all the pieces off the board, then press enter")
+    _ = input()
+    pic = cam.take_picture()
+    #cam.exit()
+
+    #reference_img = detect(pic)
+    reference_img = cv2.imread("boardFinder/output.jpg")
+
+
+    db = DigitalBoard(reference_img)
+    #cam.set_cam()
+    
+    print("Please set up the board, then press enter")
+    _ = input()
+
+    pic_pieces = cam.take_picture()
+    #cv2.imshow("pic_pieces", pic_pieces)
+    #cv2.waitKey(0)
+    pieces = db.digitalize_board(pic_pieces)
+    game = Game(pieces)
+
+    computer_color = game.turn
+    player_color = RED if computer_color == BLACK else BLACK
+    print(game.board)
 
     while run:
 
         if game.winner():
             print(game.winner())
             run = False
+            cam.exit()
+            return
 
-        if game.turn == RED:
-            evalu, move = minimax(game.board, 4, True)
+        if game.is_computer_turn():
+
+            evalu, move = minimax(game.board, 4, True, computer_color)
             new_board = move[0]
             piece = move[1]
             n_move = move[2][0]
-            print(piece, n_move)
-            print(n_move)
             print("eval: ", evalu)
             if piece.can_jump:
                 dofbot.jumpPiece([piece.y, piece.x], n_move)
             else:
                 dofbot.movePiece([piece.y, piece.x], n_move)
             game.ai_move(piece, n_move)
-            print(game.board)
 
         else:
-            print(game.turn, "turn (y x)")
+            while True:         
+                print("Press enter to continue: ")
+                x = input()
 
-            print(game.board)
-            print("Possible positions: ")
-
-            for p in game.board.valid_pieces:
-                print(p)
-
-            while True:
-                y, x = input().split()
-                if check_positions(x, y, game.board.valid_pieces):
+                player_move = cam.take_picture()
+                pieces = db.digitalize_board(player_move)
+                board = Board(pieces, player_color)
+                if game.set_player_move(board):
                     break
-            game.select(int(y), int(x))
-
-            game.draw_valid_moves(game.selected)
-            print(game.board)
-            print("Select the desired move: ")
-            x = input()
-
-            game.move(game.valid_moves[int(x) - 1][0])
-
-            game.change_turn()
-        print("turn changed ", game.turn)
-
+                print("Please play a valid move")
+                print(game.board)
 
 if __name__ == "__main__":
     main()

@@ -9,24 +9,29 @@ class Game:
 
     def __init__(self, pieces):
         self.selected = None
-        self.board = Board(pieces)
-        self.turn = RED
+        self.turn = self.get_computer_color(pieces)
+        self.board = Board(pieces, self.turn)
         self.valid_moves = []
+        self.computer_color = self.turn
+        self.player_color = BLACK if self.computer_color == RED else RED
         # self.win = win
 
     def get_board(self):
         return self.board
 
-    def change_turn(self):
+    def change_turn(self, computer_turn):
         self.valid_moves = []
-        if self.selected.can_jump:
+        if computer_turn and self.selected.can_jump:
             self.board.possible_moves(self.turn)
             return
-        if self.turn == RED:
-            self.turn = BLACK
-            self.board.possible_moves(self.turn)
-        elif self.turn == BLACK:
-            self.turn = RED
+        else:
+            if self.turn == RED:
+                self.turn = BLACK
+                self.selected = None
+            elif self.turn == BLACK:
+                self.turn = RED
+                self.selected = None
+            
             self.board.possible_moves(self.turn)
 
     def move(self, pos):
@@ -40,6 +45,7 @@ class Game:
                 self.board.draw_board()
                 self.board.possible_moves(self.turn)
                 self.valid_moves = self.selected.next_moves
+            
         else:
             return False
 
@@ -52,17 +58,32 @@ class Game:
             self.selected = piece
             self.valid_moves = piece.next_moves
 
-    def draw_valid_moves(self, piece):
-        self.board.draw_piece_moves(piece)
+    def draw_valid_moves(self):
+        self.board.draw_piece_moves(self.selected)
 
     def ai_move(self, piece, pos):
-        print("piece: ", piece)
+        #print("piece: ", piece)
         self.selected = piece
         self.move(pos)
         self.board.draw_board()
-        self.change_turn()
+        self.change_turn(True)
         
+    def set_player_move(self, board):
+        if self.board.compare_boards_and_move(board, self.player_color):
+            self.change_turn(False)
+            return True
+        return False
+        
+    def get_computer_color(self, pieces):
+        red_y = [p[0] for p in pieces[1]]
+        mean_red = sum(red_y)/len(red_y)
+        black_y = [p[0] for p in pieces[0]]
+        mean_black = sum(black_y)/len(black_y)
 
+        return RED if mean_red < mean_black else BLACK
+    
+    def is_computer_turn(self):
+        return self.turn == self.computer_color
 
     def winner(self):
         return self.board.winner()
