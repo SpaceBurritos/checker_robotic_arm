@@ -10,16 +10,14 @@ class Piece:
         self.y = pos[0]
         self.x = pos[1]
         self.color = color  # two possible colors - RED or BLACK
-        self.forward = direction  # 1 if self.y < 4 else -1 # if the piece is from the computer side will move with 1
-        # else with -1
-        self.king = self.make_king()
+        self.forward = direction
+        self.king = False
+        self.can_jump = False
         self.is_jumping = False
         self.valid_moves = self.poss_moves()
         self.next_moves = []
-        self.can_jump = False
 
-        self.del_pieces = []
-        pass
+
 
     def move(self, pos):
         """
@@ -78,6 +76,9 @@ class Piece:
 
     def set_can_jump(self, val):
         self.can_jump = val
+
+    def set_is_jumping(self, val):
+        self.is_jumping = val
 
     def get_skipped_pos(self, n_pos):
         if self.can_jump:

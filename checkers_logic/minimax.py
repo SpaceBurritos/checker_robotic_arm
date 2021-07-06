@@ -36,8 +36,9 @@ def minimax(board, depth, max_player, color):
                 if maxEval < evaluation:
                     maxEval = evaluation
                     best_move = move
-
+        #print("maxEval:", maxEval, best_move)
         return maxEval, best_move
+
     else:
         minEval = float("inf")
         best_move = None
@@ -54,6 +55,7 @@ def minimax(board, depth, max_player, color):
                 if minEval > evaluation:
                     minEval = evaluation
                     best_move = move
+        #print("minEval", minEval, best_move)
         return minEval, best_move
 
 
@@ -80,8 +82,7 @@ def simulate_move(piece, move, board, skip):
         board.check_jump(piece)
         if len(piece.next_moves) == 0:
             piece.set_can_jump(False)
-            board.last_jump = None
-            board.is_jumping = False
+            piece.set_is_jumping(False)
     return board
 
 
@@ -107,9 +108,8 @@ def get_all_moves(board, color):
                 temp_board = deepcopy(board)
                 temp_piece = temp_board.get_piece(piece.y, piece.x, piece.color)
                 new_board = simulate_move(temp_piece, move, temp_board, piece.can_jump)
-                if new_board.is_jumping:
+                if temp_piece.is_jumping:
                     can_jump = True
                 moves.append([new_board, piece, move])
-
         return moves, can_jump
 
