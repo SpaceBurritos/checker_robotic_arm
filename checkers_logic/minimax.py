@@ -5,6 +5,17 @@ BLACK = "black"
 
 
 def minimax(board, depth, max_player, color):
+    """
+    Gets the value of the position of the game, based on future actions
+    Parameters:
+         board (Board): board with the information of the pieces
+         depth (int): number of moves in the future
+         max_player (bool): if its the player looking for the max eval
+         color (String): color of the pieces
+    Returns:
+        maxEval (int): return the best evaluation with the given depth
+        best_move ([new_board, piece, move]): returns the best move with the piece with that move and the board
+    """
     if depth == 0 or board.winner():
         return board.evaluate(), board
 
@@ -47,7 +58,17 @@ def minimax(board, depth, max_player, color):
 
 
 def simulate_move(piece, move, board, skip):
-
+    """
+    Simulates one move
+    Parameters:
+        piece (Piece):
+        move ([[next position y, next position x],[piece removed y, piece removed x]]): move to be simulated and the
+        position of the piece that will be removed
+        board (Board):
+        skip (bool): if the piece can jump
+    Returns:
+        board (Board): the board with the moves done
+    """
     board.move(piece, move[0])
     if skip:
 
@@ -65,6 +86,16 @@ def simulate_move(piece, move, board, skip):
 
 
 def get_all_moves(board, color):
+    """
+    Goes through all the possible moves for one round
+    Parameters:
+        board (Board): board with all the information
+        color (String): color of the pieces
+    Returns:
+        moves ([new_board, piece, move]): the board with the changes, the piece that was moved and the position where it
+        was move
+        can_jump (bool): whether one of the pieces can keep jumping
+    """
     moves = []
     board.possible_moves(color)
     can_jump = False

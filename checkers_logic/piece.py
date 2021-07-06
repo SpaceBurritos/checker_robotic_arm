@@ -9,8 +9,8 @@ class Piece:
     def __init__(self, pos, color):
         self.y = pos[0]
         self.x = pos[1]
-        self.color = color
-        self.forward = 1 if self.y < 4 else -1
+        self.color = color # two possible colors - RED or BLACK
+        self.forward = 1 if self.y < 4 else -1 # if the piece is from the computer side will move with 1 else with -1
         self.king = self.make_king()
         self.is_jumping = False
         self.valid_moves = self.poss_moves()
@@ -21,11 +21,21 @@ class Piece:
         pass
 
     def move(self, pos):
+        """
+        Sets the position of the piece
+        Arguments:
+            pos ([y, x]): position where the piece will be moved
+        """
         self.y = pos[0]
         self.x = pos[1]
         self.valid_moves = self.poss_moves()
 
     def poss_moves(self):
+        """
+        Generates the possible moves of the piece, without taking into account other pieces
+        Returns:
+            moves (List[[y,x]]): possible moves, taking just into account the dimensions of the board
+        """
         moves = []
         left = [self.y + self.forward, self.x + LEFT]
         right = [self.y + self.forward, self.x + RIGHT]
@@ -43,13 +53,20 @@ class Piece:
         return moves
 
     def add_next_move(self, move):
+        """Appends a move into the list next_moves"""
         self.next_moves.append(move)
         
 
     def del_next_moves(self):
+        """Deletes all the elements from next_moves"""
         self.next_moves = []
 
     def make_king(self):
+        """
+        Checks if a piece can be made a king, returns a boolean
+        Returns:
+            (bool): whether the piece can become a king
+        """
         king_y = 7 if self.forward == 1 else 0
         if self.y == king_y and not self.king:
             self.king = True
@@ -71,13 +88,14 @@ class Piece:
             print("There is no skipped position")
 
     def __eq__(self, other):
-
+        """Can be compared with other Piece objects or with lists with [y,x] structure"""
         if type(other) is list:
             return other == [self.y, self.x]
         else:
             return [other.y, other.x] == [self.y, self.x]
 
     def __str__(self):
+        """ Returns the position of the piece """
         return "[" + str(self.y) + ", " + str(self.x) + "]"
         
         

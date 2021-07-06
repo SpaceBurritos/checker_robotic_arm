@@ -1,4 +1,3 @@
-
 import numpy as np
 from checkers_logic.piece import Piece
 from copy import deepcopy
@@ -17,6 +16,7 @@ class Board:
         self.red_pieces = [Piece(piece, RED) for piece in pieces[1]]
         self.valid_pieces = []
         self.computer_color = color
+        self.player_color = BLACK if color == RED else RED
         self.num_red = len(self.red_pieces)
         self.num_black = len(self.black_pieces)
         self.red_kings = 0
@@ -27,9 +27,11 @@ class Board:
         self.last_jump = None
         self.possible_moves(color)
 
-        
-
     def draw_board(self):
+        """Draws the board with the current position from the pieces
+        Returns:
+            (List[List[Strings]]): the position of all the pieces in a list of lists
+        """
         row = ['-' for i in range(8)]
         self.board = [row for i in range(8)]
         self.board = np.array(self.board)
@@ -47,17 +49,22 @@ class Board:
         return self.board
 
     def draw_piece_moves(self, piece):
+        """
+        Draw the possible next_moves of a chosen piece, with numbers from 1 to 2 or 4
+        Parameters:
+            piece (Piece): piece that will be used to get the next moves
+        """
         for i, move in enumerate(piece.next_moves):
             move = move[0]
             self.board[move[0]][move[1]] = i + 1
 
-
     def move(self, piece, n_pos):
-        '''
-        pos = [pos_y, pos_x] -> position of the piece to be moved
-        n_pos = [pos_y, pos_x] -> new position of the piece 
-        to be moved
-        '''
+        """
+        First checks if a move is valid and then moves the chosen piece
+        Parameters:
+            piece (Piece): piece to be moved
+            n_pos  ([pos_y, pos_x]) -> new position of the piece to be moved
+        """
         moves = np.array(piece.next_moves)
         if n_pos in moves[:, 0]:
             if piece.can_jump:
@@ -65,7 +72,7 @@ class Board:
                 self.last_jump.is_jumping = True
             else:
                 self.last_jump = None
-                
+
             piece.move(n_pos)
 
             if piece.make_king():
@@ -79,16 +86,14 @@ class Board:
         else:
             print("Invalid move position")
 
-
-
     def remove(self, piece, color):
-        #print(piece, color)
-        '''
-        Generates a list of all the possible moves that the pieces on the board can do, if there are jump moves these will
-        take priority
-        :param
-        color = string -> color of the pieces looking for the possible moves
-        '''
+        """
+        Generates a list of all the possible moves that the pieces on the board can do, if there are jump moves these
+        will take priority
+        Parameters:
+            piece (Piece): piece that will be removed
+            color (String): color of the pieces looking for the possible moves
+        """
         if color == RED:
             if piece in self.red_pieces:
 
@@ -110,14 +115,12 @@ class Board:
         self.valid_pieces = []
         [piece.del_next_moves() for piece in self.red_pieces]
         [piece.del_next_moves() for piece in self.black_pieces]
-        if self.last_jump:
+        if self.last_jump: # If there was a piece jumping
             self.check_jump(self.last_jump)
-
-            if len(self.valid_pieces) == 0:
-                self.last_jump.set_can_jump(False)
+            if len(self.valid_pieces) == 0:  # if there are no moves for the jumping piece finished the turn
                 self.last_jump.is_jumping = False
-                self.last_jump = None  
-                self.is_jumping = False  
+                self.last_jump = None
+                self.is_jumping = False
             return
         self.check_jumps(color)
         if len(self.valid_pieces) > 0:  # If there are jumps the only possible moves are the jumps
@@ -144,23 +147,28 @@ class Board:
             else:
                 print("Color not available")
 
-    '''
-    Generating all the possible jumps
-    :param
-    color = string -> color of the pieces
-    '''
+
 
     def check_jumps(self, color):
+        """
+        Generating all the possible jumps of all the pieces
+        Parameters:
+            color (String): color of the pieces
+        """
         if color == RED:
             for piece in self.red_pieces:
-                piece.set_can_jump(False)
                 self.check_jump(piece)
         elif color == BLACK:
             for piece in self.black_pieces:
-                piece.set_can_jump(False)
                 self.check_jump(piece)
 
-    def check_jump(self, piece): # board -> extra argument
+    def check_jump(self, piece):  # board -> extra argument
+        """
+        Generates all the possible jumps for a piece
+        Parameters:
+            piece (Piece): piece that will be checked
+        """
+        piece.set_can_jump(False)
         if piece.color == RED:
             for move in piece.valid_moves:
                 if move in self.black_pieces:
@@ -185,6 +193,14 @@ class Board:
                             piece.set_can_jump(True)
 
     def compare_boards_and_move(self, img_board, player_color):
+        """
+        Compares the current board with another board to check if the changes come from a valid move
+        Parameters:
+            img_board (Board): other board
+            player_color (String): color of the player's pieces
+        Returns:
+            (boolean): whether the move was successful or not
+        """
         b_pieces = deepcopy(self.black_pieces)
         r_pieces = deepcopy(self.red_pieces)
 
@@ -202,7 +218,7 @@ class Board:
             for r in img_board.red_pieces:
                 if r in r_pieces:
                     r_pieces.remove(r)
-            if len(b_pieces) != 1 or len(n_move) != 1 :
+            if len(b_pieces) != 1 or len(n_move) != 1:
                 print("More than one piece was moved")
                 return False
             else:
@@ -217,7 +233,7 @@ class Board:
                         for r in r_pieces:
                             print("jump:", [x for x in jump_moves if x[1] == r])
                             jump = [x for x in jump_moves if x[1] == r]
-                            if jump: 
+                            if jump:
                                 r_pieces.remove(r)
                                 jump = jump[0]
                                 break
@@ -249,7 +265,7 @@ class Board:
                     n_move.append([r.y, r.x])
                 else:
                     r_pieces.remove(r)
-            if len(r_pieces) != 1 or len(n_move) != 1 :
+            if len(r_pieces) != 1 or len(n_move) != 1:
                 print("More than one piece was moved")
                 return False
             else:
@@ -272,10 +288,15 @@ class Board:
                         self.draw_board()
                     return True
                 else:
-                    print("something fishy happened")        
+                    print("something fishy happened")
                     return False
-                    
+
     def winner(self):
+        """
+        Checks if any of the sides has 0 pieces
+        Returns:
+            (boolean): whether there is a winner or not
+        """
         if self.num_red == 0:
             self.win = BLACK
             return True
@@ -294,6 +315,15 @@ class Board:
         print(self.black_kings)
 
     def get_piece(self, y, x, color):
+        """
+        Get the Piece object from its coordinates
+        Parameters:
+            y (int): y-coordinate (0-7)
+            x (int): x-coordinate (0-7)
+            color (String): color of the piece (red or black)
+        Returns:
+            p (Piece): the respective piece with the given coordinates
+        """
         if color == RED:
             for p in self.red_pieces:
                 if p.y == y and p.x == x:
@@ -305,7 +335,6 @@ class Board:
         else:
             print("No such piece")
             return None
-
 
     def __str__(self):
         n = 0
@@ -319,30 +348,37 @@ class Board:
         return str_board
 
     def evaluate(self):
-        #return self.num_red - self.num_black + (self.red_kings * 2 - self.black_kings * 2)
+        """
+        Evaluates the board conditions for the computer
+        Returns:
+            (int): the value of the board's current structure with respect to the computer's pieces
+        """
         if self.computer_color == BLACK:
-            return sum([b.y for b in self.black_pieces if not b.king]) - sum([7-r.y for r in self.red_pieces if not r.king]) +\
-            8*self.black_kings - 8*self.red_kings
+            return sum([b.y for b in self.black_pieces if not b.king]) - sum(
+                [7 - r.y for r in self.red_pieces if not r.king]) + \
+                   8 * self.black_kings - 8 * self.red_kings
         else:
-            return sum([r.y for r in self.red_pieces if not r.king]) - sum([7 - b.y for b in self.black_pieces if not b.king]) +\
-            8*self.red_kings - 8*self.black_kings
+            return sum([r.y for r in self.red_pieces if not r.king]) - sum(
+                [7 - b.y for b in self.black_pieces if not b.king]) + \
+                   8 * self.red_kings - 8 * self.black_kings
+
 
 if __name__ == "__main__":
-    pieces = [[[1, 3], [1, 5], [3, 1], [3, 3], [2, 0], [3, 5], [2, 4]],
+    piecesN = [[[1, 3], [1, 5], [3, 1], [3, 3], [2, 0], [3, 5], [2, 4]],
               [[6, 4], [6, 0], [4, 2], [7, 1], [4, 6], [6, 6], [4, 4]]]
-    pieces2 = [[[1, 3], [1, 5], [3, 1], [5,1], [2, 0], [3, 5], [2, 4]],
+    piecesN2 = [[[1, 3], [1, 5], [3, 1], [5, 1], [2, 0], [3, 5], [2, 4]],
                [[6, 4], [6, 0], [7, 1], [4, 6], [6, 6], [4, 4]]]
     # pieces[0] -> black
     # pieces[1] -> red
-    game = Board(pieces)
+    game = Board(piecesN)
     game.possible_moves(BLACK)
-    game2 = Board(pieces2)
+    game2 = Board(piecesN2)
     print(game)
     print(game2)
     game.compare_boards_and_move(game2)
     print(game)
-    #game.possible_moves(RED)
-    #print(game.valid_pieces)
+    # game.possible_moves(RED)
+    # print(game.valid_pieces)
     # game.move([7, 1], [6,2])
-    #pic = game.get_piece(6,0, RED)
-    #print(pic.valid_moves)
+    # pic = game.get_piece(6,0, RED)
+    # print(pic.valid_moves)
