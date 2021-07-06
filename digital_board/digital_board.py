@@ -1,36 +1,27 @@
-import os, sys 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+import os, sys
 import numpy as np
 import cv2
-#from camera import Camera
+# from camera import Camera
 from sklearn.cluster import KMeans
 
-from boardFinder.utils import ImageObject
-#from boardFinder.main import detect
-
-from matplotlib import pyplot as plt
-from skimage import measure
-
-LAYERS = 3
-SQR_SIZE = 500
+sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
 class DigitalBoard:
 
     def __init__(self, img):
-        self.reference = img#cv2.resize(img, (500,500))
+        self.reference = img
         self.red_pieces_pos = []
         self.black_pieces_pos = []
-        self.width = 0
-        self.height = 0
         self.points = []
-        self.div_col = 80
-        self.image = None
-        self.points = []
-        self.red = 130
-        self.black = 100
 
     def get_homography(self, img):
-
+        """
+        Gets the points where the reference image is found on img
+        Parameters:
+            img (Arr): img with the board and the pieces
+        Returns:
+            img (Arr): image with the board highlighted
+        """
         akaze = cv2.AKAZE_create()
         # find the keypoints and descriptors with Akaze
         kp1, des1 = akaze.detectAndCompute(self.reference, None)
@@ -41,7 +32,7 @@ class DigitalBoard:
         if des2.dtype != "float32":
             des2 = des2.astype("float32")
 
-        #des2 = np.float32(des2)
+        # des2 = np.float32(des2)
         FLANN_INDEX_KDTREE = 1
         index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
         search_params = dict(checks=50)
@@ -62,24 +53,30 @@ class DigitalBoard:
             dst_pts = np.float32([kp2[m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
             M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
             matchesMask = mask.ravel().tolist()
-            
+
             h, w, d = self.reference.shape
             pts = np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(-1, 1, 2)
             dst = cv2.perspectiveTransform(pts, M)
             dst = np.int32(dst)
             img = cv2.polylines(img, [dst], True, 255, 3, cv2.LINE_AA)
-            #cv2.imshow("img", img)
-            #cv2.waitKey(0)
+            # cv2.imshow("img", img)
+            # cv2.waitKey(0)
 
         else:
             print("Not enough matches are found - {}/{}".format(len(good), MIN_MATCH_COUNT))
 
-        #self.image = img
-        self.points = dst.reshape(4,2)
+        self.points = dst.reshape(4, 2)
         return img
 
     def get_rect_board(self, img):
-        dst = self.points#.reshape(4, 2)
+        """
+        Crops the board from the image, and rectifies the image
+        Parameters:
+            img (Arr): image that includes the board to be cropped
+        Returns:
+            warp (Arr): image with only the board
+        """
+        dst = self.points
         rect = np.zeros((4, 2), dtype="float32")
 
         s = dst.sum(axis=1)
@@ -114,17 +111,83 @@ class DigitalBoard:
 
         h, w, _ = warp.shape
 
-        return warp  # cv2.resize(warp, (h,h))
+        return warp
 
+    def get_pieces(self, img):
+        """
+        Get the pieces positions through the processing of the image
+        Parameters:
+            img (Arr): rectified image of the board
+        Returns:
+            pieces (List[y,x]): position of all the pieces found
+            colors (List[[HSV]]): mean HSV representation of all the pieces
+        """
 
-    def set_points(self, pts):
-        self.points = pts
+        img_rsz = cv2.resize(img, (500, 500))
+
+        blur = cv2.GaussianBlur(img_rsz, (5, 5), 0)
+
+        blur2 = cv2.resize(cv2.GaussianBlur(self.reference, (5, 5), 0), (500, 500))
+
+        diff = cv2.absdiff(blur, blur2)
+        diff = cv2.cvtColor(diff, cv2.COLOR_BGR2HSV)
+
+        kernel = np.ones((5, 5), np.uint8)
+        diff = cv2.erode(diff, kernel, iterations=1)
+
+        h, s, v = cv2.split(diff)
+
+        ret, th3 = cv2.threshold(v, 70, 255, cv2.THRESH_BINARY)
+        th3 = cv2.dilate(th3, kernel, iterations=1)
+
+        contours, hierarchy = cv2.findContours(th3, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        # cv2.imshow("img", img_rsz)
+        # cv2.imshow("th3", th3)
+        # cv2.waitKey(0)
+
+        colors = []
+        pieces = []
+
+        for c in contours:
+            M = cv2.moments(c)
+            if cv2.contourArea(c) > 500:
+                cx = int(M['m10'] / M['m00'])
+                cy = int(M['m01'] / M['m00'])
+                r = img_rsz.shape[0] / 18
+                x_size = img_rsz.shape[0]
+                y_size = img_rsz.shape[1]
+
+                roi = img_rsz[max(0, int(cy - r)): min(int(cy + r), y_size),
+                      max(0, int(cx - r)): min(int(cx + r), x_size)]
+                w, h, _ = roi.shape
+                mask = np.zeros((w, h, 3), roi.dtype)
+                cv2.circle(mask, (int(w / 2), int(h / 2)), int(r), (255, 255, 255), -1)
+                dst = cv2.bitwise_and(roi, mask)
+                if dst is not None:
+                    y_index = int(cy / (img_rsz.shape[0] / 8))
+                    x_index = int(cx / (img_rsz.shape[1] / 8))
+
+                    color = np.mean(dst, axis=0)
+                    color = np.mean(color, axis=0)
+                    pieces.append([y_index, x_index])
+                    colors.append(color)
+                    cv2.circle(img_rsz, (int(cx), int(cy)), int(r), (0, 255, 0), 3)
+
+        return pieces, colors
 
     def set_pieces_pos(self, img, pieces, colors, show_board=True):
+        """
+        Classifies and groups pieces by their color
+        Parameters:
+            img (Arr): image of the rectified board
+            pieces (Arr[Arr[y,x]]): array of the index positions of all the pieces
+            colors (Arr[Arr[H,S,V]]): array of all the piece's mean colors
+            show_board (bool):
+        """
 
         if pieces is not None:
             colors = np.array(colors)
-            color_clusters = KMeans(n_clusters=2, random_state=0).fit_predict(colors) 
+            color_clusters = KMeans(n_clusters=2, random_state=0).fit_predict(colors)
 
             darker_label = 1 if np.mean(colors[color_clusters == 1]) < np.mean(colors[color_clusters == 0]) else 0
             for i, p in enumerate(pieces):
@@ -135,8 +198,8 @@ class DigitalBoard:
                 else:
                     self.red_pieces_pos.append([y, x])
                 if show_board:
-                    x_pos = int(x*img.shape[1]/8 + (img.shape[1]/8)/2)
-                    y_pos = int(y*img.shape[0]/8 + (img.shape[0]/8)/2)
+                    x_pos = int(x * img.shape[1] / 8 + (img.shape[1] / 8) / 2)
+                    y_pos = int(y * img.shape[0] / 8 + (img.shape[0] / 8) / 2)
                     cv2.circle(img, (x_pos, y_pos), 25, (0, 255, 0), 3)
 
             if show_board:
@@ -145,70 +208,15 @@ class DigitalBoard:
         else:
             print("there are no pieces")
 
-        
-    def get_pieces(self, img):
-
-        img_rsz = cv2.resize(img, (500,500))
-
-        
-        blur = cv2.GaussianBlur(img_rsz, (5,5), 0)
-
-         
-        blur2 = cv2.resize(cv2.GaussianBlur(self.reference, (5,5), 0), (500,500))
-
-        diff = cv2.absdiff(blur, blur2)
-        diff = cv2.cvtColor(diff, cv2.COLOR_BGR2HSV)
-
-        kernel = np.ones((5,5), np.uint8)
-        diff = cv2.erode(diff, kernel, iterations=1)
-
-        h, s, v = cv2.split(diff)    
-
-        ret, th3 = cv2.threshold(v, 70, 255, cv2.THRESH_BINARY)  
-        th3 = cv2.dilate(th3, kernel, iterations=1)
-        
-        contours, hierarchy = cv2.findContours(th3, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        #cv2.imshow("img", img_rsz)        
-        #cv2.imshow("th3", th3)
-        #cv2.waitKey(0)
-        
-        colors = []
-        pieces = []
-
-        for c in contours:
-            M = cv2.moments(c)
-            if cv2.contourArea(c) > 500:
-                cx = int(M['m10']/M['m00'])
-                cy = int(M['m01']/M['m00'])
-                r = img_rsz.shape[0]/18
-                x_size = img_rsz.shape[0]
-                y_size = img_rsz.shape[1]
-                
-                roi = img_rsz[max(0, int(cy - r)) : min(int(cy + r), y_size), max(0, int(cx - r)) : min(int(cx + r), x_size)]
-                w, h, _ = roi.shape
-                mask = np.zeros((w,h, 3 ), roi.dtype)
-                cv2.circle(mask, (int(w/2), int(h/2)), int(r), (255, 255, 255), -1)
-                dst = cv2.bitwise_and(roi, mask)
-                if dst is not None:
-                    y_index = int(cy/(img_rsz.shape[0]/8))
-                    x_index = int(cx/(img_rsz.shape[1]/8))
-
-                    color = np.mean(dst, axis=0)
-                    color = np.mean(color, axis=0)
-                    pieces.append([y_index, x_index])
-                    colors.append(color)
-                    cv2.circle(img_rsz, (int(cx), int(cy)), int(r), (0, 255, 0), 3)
-
-        return pieces, colors
-
     def del_positions(self):
+        """ Deletes all the past positions """
         self.black_pieces_pos = []
         self.red_pieces_pos = []
 
     def __str__(self):
         rows = " x  0  1  2  3  4  5  6  7 \n"
         for yp in range(8):
-            rows +=  " " + str(yp) + " "
+            rows += " " + str(yp) + " "
             for xp in range(8):
                 if [yp, xp] in self.black_pieces_pos:
                     rows += " B "
@@ -220,14 +228,20 @@ class DigitalBoard:
         return rows
 
     def digitalize_board(self, img_with_board, show=False):
-
+        """
+        Grabs an image with a chessboard and returns an array with all the positions of the pieces on the board
+        Parameters:
+            img_with_board (Arr): image with a chessboard in it
+            show (bool): if true shows the evolution of the image
+        Returns:
+            ([black_pieces, red_pieces]): all the pieces grouped by color and with their index positions
+        """
         self.del_positions()  # Eliminates the elements in black_pieces_pos and red_pieces_pos
-
-        d = self.get_homography(img_with_board)
+        _ = self.get_homography(img_with_board)
         rect_img = self.get_rect_board(img_with_board)
         circles, colors = self.get_pieces(rect_img)
         self.set_pieces_pos(rect_img, circles, colors, show)
-        
+
         return [self.black_pieces_pos, self.red_pieces_pos]
 
 
