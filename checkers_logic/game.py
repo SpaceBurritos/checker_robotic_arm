@@ -19,14 +19,14 @@ class Game:
     def get_board(self):
         return self.board
 
-    def change_turn(self, computer_turn):
+    def change_turn(self):
         """
         Checks if the player is in middle of multiple jumps
         Parameters:
             computer_turn (boolean):
         """
         self.valid_moves = []
-        if self.selected.can_jump:  # computer_turn and self.selected.can_jump:
+        if self.selected.can_jump:
             self.board.possible_moves(self.turn)
             return
         else:
@@ -80,7 +80,7 @@ class Game:
         self.selected = piece
         self.move(pos)
         self.board.draw_board()
-        self.change_turn(True)
+        self.change_turn()
 
     def set_player_move(self, board):
         """

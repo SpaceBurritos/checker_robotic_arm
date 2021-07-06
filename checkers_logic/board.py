@@ -73,10 +73,8 @@ class Board:
             if piece.make_king():
                 if piece.color == RED:
                     self.add_red_king()
-                    print(self.red_kings)
                 elif piece.color == BLACK:
                     self.add_black_king()
-                    print(self.black_kings)
             self.draw_board()
         else:
             print("Invalid move position")
@@ -93,7 +91,6 @@ class Board:
         if color == RED:
             if piece in self.red_pieces:
                 if piece.king:
-                    print("removed red king")
                     self.red_kings -= 1
                 self.red_pieces.remove(piece)
                 self.num_red = len(self.red_pieces)
@@ -101,7 +98,6 @@ class Board:
         elif color == BLACK:
             if piece in self.black_pieces:
                 if piece.king:
-                    print("removed black king")
                     self.black_kings -= 1
                 self.black_pieces.remove(piece)
                 self.num_black = len(self.black_pieces)
@@ -144,6 +140,7 @@ class Board:
             self.check_jump(jumping_piece)
             if len(self.valid_pieces) == 0:  # if there are no moves for the jumping piece, finish the turn
                 jumping_piece.set_is_jumping(False)
+                jumping_piece.poss_moves()
                 self.can_jump = False
             return True
         else:
@@ -231,21 +228,16 @@ class Board:
                     while piece.can_jump:
                         jump_moves = piece.next_moves
                         for r in r_pieces:
-                            print("jump:", [x for x in jump_moves if x[1] == r])
                             jump = [x for x in jump_moves if x[1] == r]
                             if jump:
                                 r_pieces.remove(r)
                                 jump = jump[0]
                                 break
                             else:
-                                print("invalid move")
-                                print("r_pieces:", [r for r in r_pieces])
-                                print("jump_moves:", jump_moves)
                                 return False
 
                         self.move(piece, jump[0])
                         piece2 = self.get_piece(jump[1][0], jump[1][1], RED)
-                        print(piece2)
                         self.remove(piece2, RED)
                         self.possible_moves(BLACK)
                         self.draw_board()
@@ -308,11 +300,9 @@ class Board:
 
     def add_red_king(self):
         self.red_kings += 1
-        print(self.red_kings)
 
     def add_black_king(self):
         self.black_kings += 1
-        print(self.black_kings)
 
     def get_piece(self, y, x, color):
         """
