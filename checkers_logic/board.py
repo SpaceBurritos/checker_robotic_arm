@@ -2,8 +2,6 @@ import numpy as np
 from checkers_logic.piece import Piece
 from copy import deepcopy
 
-LEFT = "left"
-RIGHT = "right"
 RED = "red"
 BLACK = "black"
 
@@ -194,7 +192,6 @@ class Board:
         Compares the current board with another board to check if the changes come from a valid move
         Parameters:
             img_board (Board): other board
-            player_color (String): color of the player's pieces
         Returns:
             (boolean): whether the move was successful or not
         """
@@ -227,14 +224,16 @@ class Board:
                 elif piece.can_jump and len(r_pieces) > 0:
                     while piece.can_jump:
                         jump_moves = piece.next_moves
+                        jump = None
                         for r in r_pieces:
                             jump = [x for x in jump_moves if x[1] == r]
                             if jump:
                                 r_pieces.remove(r)
                                 jump = jump[0]
                                 break
-                            else:
-                                return False
+
+                        if not jump:
+                            return False
 
                         self.move(piece, jump[0])
                         piece2 = self.get_piece(jump[1][0], jump[1][1], RED)
@@ -266,19 +265,28 @@ class Board:
                 if len(b_pieces) == 0:
                     self.move(piece, n_move[0])
                     return True
+
                 elif piece.can_jump and len(b_pieces) > 0:
                     while piece.can_jump:
                         jump_moves = piece.next_moves
+                        jump = None
                         for b in b_pieces:
                             jump = [x for x in jump_moves if x[1] == b][0]
-                            if len(jump) > 1: break
+                            if jump:
+                                b_pieces.remove(b)
+                                jump = jump[0]
+                                break
+
+                        if not jump:
+                            return False
+
                         self.move(piece, jump[0])
                         piece2 = self.get_piece(jump[1][0], jump[1][1], BLACK)
-                        print(piece2)
                         self.remove(piece2, BLACK)
                         self.possible_moves(RED)
                         self.draw_board()
                     return True
+
                 else:
                     print("something fishy happened")
                     return False
