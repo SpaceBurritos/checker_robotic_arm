@@ -11,9 +11,9 @@ BLACK = "black"
 class Board:
 
     def __init__(self, pieces, color):
-
-        self.black_pieces = [Piece(piece, BLACK) for piece in pieces[0]]
-        self.red_pieces = [Piece(piece, RED) for piece in pieces[1]]
+        directions = self.get_directions(pieces)
+        self.black_pieces = [Piece(piece, BLACK, directions[0]) for piece in pieces[0]]
+        self.red_pieces = [Piece(piece, RED, directions[1]) for piece in pieces[1]]
         self.valid_pieces = []
         self.computer_color = color
         self.player_color = BLACK if color == RED else RED
@@ -335,6 +335,14 @@ class Board:
         else:
             print("No such piece")
             return None
+
+    def get_directions(self, pieces):
+        red_y = [p[1] for p in pieces[1]]
+        mean_red = sum(red_y) / len(red_y)
+        black_y = [p[1] for p in pieces[0]]
+        mean_black = sum(black_y) / len(black_y)
+
+        return [-1, 1] if mean_red < mean_black else [1, -1]
 
     def __str__(self):
         n = 0

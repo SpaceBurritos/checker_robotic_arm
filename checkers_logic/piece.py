@@ -6,11 +6,12 @@ RIGHT = 1
 
 class Piece:
 
-    def __init__(self, pos, color):
+    def __init__(self, pos, color, direction):
         self.y = pos[0]
         self.x = pos[1]
-        self.color = color # two possible colors - RED or BLACK
-        self.forward = 1 if self.y < 4 else -1 # if the piece is from the computer side will move with 1 else with -1
+        self.color = color  # two possible colors - RED or BLACK
+        self.forward = direction  # 1 if self.y < 4 else -1 # if the piece is from the computer side will move with 1
+        # else with -1
         self.king = self.make_king()
         self.is_jumping = False
         self.valid_moves = self.poss_moves()
