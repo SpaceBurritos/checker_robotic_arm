@@ -50,8 +50,6 @@ def main():
     pieces = db.digitalize_board(pic_pieces)
     game = Game(pieces)
 
-    computer_color = game.turn
-    player_color = RED if computer_color == BLACK else BLACK
     print(game.board)
 
     while run:
@@ -64,7 +62,7 @@ def main():
 
         if game.is_computer_turn():
 
-            evalu, move = minimax(game.board, 4, True, computer_color)
+            evalu, move = minimax(game.board, 4, True, game.computer_color)
             new_board = move[0]
             piece = move[1]
             n_move = move[2][0]
@@ -81,9 +79,13 @@ def main():
                 x = input()
 
                 player_move = cam.take_picture()
+                
                 pieces = db.digitalize_board(player_move)
-                board = Board(pieces, player_color)
+                board = Board(pieces, game.computer_color) 
+
                 if game.set_player_move(board):
+                    print("piece", piece)
+                    game.select(piece.y, piece.x)
                     break
                 print("Please play a valid move")
                 print(game.board)

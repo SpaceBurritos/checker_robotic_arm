@@ -1,5 +1,5 @@
-            
-
+import sys, os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 from checkers_logic.game import Game
 from checkers_logic.minimax import minimax
 from checkers_logic.board import Board
@@ -23,8 +23,8 @@ def main():
     
     run = True
     
-    #black_pieces = [[2,3], [5,6],[6,7], [7,0], [4,5], [3,2]]
-    #red_pieces = [[1,2], [0,7], [6,1], [1,4]]
+    #red_pieces = [[3,4], [0,1],[0,3], [3,2]]
+    #black_pieces = [[4,3], [4,5], [6,5], [7,0]]
     
     
     black_pieces = []
@@ -38,7 +38,7 @@ def main():
             for x in range(8):
                 if (y + x) % 2 != 0:
                     black_pieces.append([y,x])
-                   
+                      
     pieces = [black_pieces, red_pieces]
                 
     game = Game(pieces)
