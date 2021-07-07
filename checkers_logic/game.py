@@ -1,5 +1,5 @@
 from checkers_logic.board import Board
-
+#sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 # board = Board()
 RED = "red"
 BLACK = "black"
@@ -26,7 +26,7 @@ class Game:
             computer_turn (boolean):
         """
         self.valid_moves = []
-        if self.selected.can_jump:
+        if self.selected.is_jumping:
             self.board.possible_moves(self.turn)
             return
         else:
@@ -90,8 +90,10 @@ class Game:
         Return:
              (boolean): whether the move is valid or not
         """
-        if self.board.compare_boards_and_move(board, self.player_color):
-            self.change_turn(False)
+        is_good, piece = self.board.compare_boards_and_move(board)
+        self.selected = piece
+        if is_good:#, self.player_color):
+            self.change_turn()
             return True
         return False
 

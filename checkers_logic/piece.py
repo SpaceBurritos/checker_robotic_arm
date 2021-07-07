@@ -14,7 +14,8 @@ class Piece:
         self.king = False
         self.can_jump = False
         self.is_jumping = False
-        self.valid_moves = self.poss_moves()
+        self.valid_moves = [] 
+        self.poss_moves()
         self.next_moves = []
 
 
@@ -27,7 +28,7 @@ class Piece:
         """
         self.y = pos[0]
         self.x = pos[1]
-        self.valid_moves = self.poss_moves()
+        self.poss_moves()
 
     def poss_moves(self):
         """
@@ -49,6 +50,7 @@ class Piece:
                 moves.append(left)
             if 7 >= right[0] >= 0 and 7 >= right[1]:
                 moves.append(right)
+        self.valid_moves = moves
         return moves
 
     def add_next_move(self, move):

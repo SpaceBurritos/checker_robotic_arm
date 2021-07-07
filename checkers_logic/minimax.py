@@ -4,7 +4,7 @@ RED = "red"
 BLACK = "black"
 
 
-def minimax(board, depth, max_player, color):
+def minimax(board, depth, max_player, color, beta=float("inf"), alpha=float("-inf")):
     """
     Gets the value of the position of the game, based on future actions
     Parameters:
@@ -36,6 +36,11 @@ def minimax(board, depth, max_player, color):
                 if maxEval < evaluation:
                     maxEval = evaluation
                     best_move = move
+                #if beta <= maxEval:
+                #    return maxEval, best_move
+                #else:
+                #    beta = maxEval
+                
         #print("maxEval:", maxEval, best_move)
         return maxEval, best_move
 
@@ -50,11 +55,16 @@ def minimax(board, depth, max_player, color):
             depth = depth - 1
             color = RED if color == BLACK else RED
         if moves:
+
             for move in moves:
                 evaluation = minimax(move[0], depth, max_player, color)[0]
                 if minEval > evaluation:
                     minEval = evaluation
                     best_move = move
+                #if minEval <= alpha:
+                #    return minEval, best_move
+                #else:
+                #    alpha = minEval
         #print("minEval", minEval, best_move)
         return minEval, best_move
 
