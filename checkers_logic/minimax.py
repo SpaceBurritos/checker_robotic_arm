@@ -4,7 +4,8 @@ RED = "red"
 BLACK = "black"
 
 
-def minimax(board, depth, max_player, color, beta=float("inf"), alpha=float("-inf")):
+def minimax(board, depth, max_player, color, alpha=float("-inf"), beta=float("inf")):
+    
     """
     Gets the value of the position of the game, based on future actions
     Parameters:
@@ -16,6 +17,7 @@ def minimax(board, depth, max_player, color, beta=float("inf"), alpha=float("-in
         maxEval (int): return the best evaluation with the given depth
         best_move ([new_board, piece, move]): returns the best move with the piece with that move and the board
     """
+
     if depth == 0 or board.winner():
         return board.evaluate(), board
 
@@ -23,23 +25,25 @@ def minimax(board, depth, max_player, color, beta=float("inf"), alpha=float("-in
         maxEval = float("-inf")
         best_move = None
         moves, can_jump = get_all_moves(board, color)
+        
         if can_jump:
             max_player = True
         else:
             max_player = False
             depth = depth - 1
-            color = RED if color == BLACK else RED
-        if moves:
 
+            color = RED if color == BLACK else BLACK
+
+        if moves:
+            beta = float("inf")
             for move in moves:
-                evaluation = minimax(move[0], depth, max_player, color)[0]
+                evaluation = minimax(move[0], depth, max_player, color, alpha, beta)[0]
                 if maxEval < evaluation:
                     maxEval = evaluation
                     best_move = move
-                #if beta <= maxEval:
-                #    return maxEval, best_move
-                #else:
-                #    beta = maxEval
+                if beta <= maxEval:
+                    break
+                alpha = max([maxEval, alpha])
                 
         #print("maxEval:", maxEval, best_move)
         return maxEval, best_move
@@ -53,18 +57,19 @@ def minimax(board, depth, max_player, color, beta=float("inf"), alpha=float("-in
         else:
             max_player = True
             depth = depth - 1
-            color = RED if color == BLACK else RED
-        if moves:
 
+            color = RED if color == BLACK else BLACK
+
+        if moves:
+            alpha = float("-inf")
             for move in moves:
                 evaluation = minimax(move[0], depth, max_player, color)[0]
                 if minEval > evaluation:
                     minEval = evaluation
                     best_move = move
-                #if minEval <= alpha:
-                #    return minEval, best_move
-                #else:
-                #    alpha = minEval
+                if minEval <= alpha:
+                    break
+                beta = min([minEval, beta])
         #print("minEval", minEval, best_move)
         return minEval, best_move
 

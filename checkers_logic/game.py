@@ -3,7 +3,7 @@ from checkers_logic.board import Board
 # board = Board()
 RED = "red"
 BLACK = "black"
-
+TIE_COUNTER = 60
 
 class Game:
 
@@ -14,6 +14,7 @@ class Game:
         self.valid_moves = []
         self.computer_color = self.turn
         self.player_color = BLACK if self.computer_color == RED else RED
+        self.counter = TIE_COUNTER
         # self.win = win
 
     def get_board(self):
@@ -47,11 +48,13 @@ class Game:
         """
         if self.selected:
             self.board.move(self.selected, pos)
+            self.counter -= 1
             if self.selected.can_jump:
                 skipped_pos = self.selected.get_skipped_pos(pos)
                 color = RED if self.turn == BLACK else BLACK
                 skipped = self.board.get_piece(skipped_pos[0], skipped_pos[1], color)
                 self.board.remove(skipped, color)
+                self.counter = TIE_COUNTER
                 self.board.draw_board()
                 self.board.possible_moves(self.turn)
                 self.valid_moves = self.selected.next_moves
@@ -97,6 +100,9 @@ class Game:
             return True
         return False
 
+    def tie(self):
+        return self.counter == 0
+    
     def get_computer_color(self, pieces):
         red_y = [p[0] for p in pieces[1]]
         mean_red = sum(red_y) / len(red_y)

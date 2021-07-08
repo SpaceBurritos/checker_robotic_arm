@@ -16,11 +16,11 @@ class Board:
         self.black_pieces = [Piece(piece, BLACK, directions[0]) for piece in pieces[0]]
         self.red_pieces = [Piece(piece, RED, directions[1]) for piece in pieces[1]]
         self.all_pieces = self.black_pieces + self.red_pieces
+        self.red_kings = 0
+        self.black_kings = 0
         self.valid_pieces = []
         self.computer_color = color
         self.player_color = BLACK if color == RED else RED
-        self.red_kings = 0
-        self.black_kings = 0
         self.win = None
         self.board = self.draw_board()
         self.can_jump = False
@@ -71,9 +71,9 @@ class Board:
             piece.move(n_pos)
             if piece.make_king():
                 if piece.color == RED:
-                    self.add_red_king()
-                elif piece.color == BLACK:
-                    self.add_black_king()
+                    self.red_kings += 1
+                else:
+                    self.black_kings += 1
             self.draw_board()
         else:
             print("Invalid move position")
@@ -92,9 +92,6 @@ class Board:
                 if piece.king:
                     self.red_kings -= 1
                 self.red_pieces.remove(piece)
-
-                
-
 
         elif color == BLACK:
             if piece in self.black_pieces:
@@ -317,12 +314,6 @@ class Board:
         else:
             return False
 
-    def add_red_king(self):
-        self.red_kings += 1
-
-    def add_black_king(self):
-        self.black_kings += 1
-
     def get_piece(self, y, x, color):
         """
         Get the Piece object from its coordinates
@@ -344,6 +335,7 @@ class Board:
         else:
             print("No such piece")
             return None
+        
 
     def get_directions(self, pieces):
         red_y = [p[0] for p in pieces[1]]
@@ -370,18 +362,42 @@ class Board:
         Returns:
             (int): the value of the board's current structure with respect to the computer's pieces
         """
-        if self.computer_color == BLACK:
-            return sum([7 for b in self.black_pieces if not b.king and b.y > 3]) +\
-                   sum([5 for b in self.black_pieces if not b.king and b.y < 4]) -\
-                   sum([7 for r in self.red_pieces if not r.king and r.y < 4]) -\
-                   sum([5 for r in self.red_pieces if not r.king and r.y > 3]) + \
-                   10 * self.black_kings - 10 * self.red_kings
+        if self.red_kings + self.black_kings != len(self.all_pieces):
+            if self.computer_color == BLACK:
+
+                return sum([5 + b.y for b in self.black_pieces if not b.king]) -\
+                       sum([12 - r.y for r in self.red_pieces if not r.king]) +\
+                       sum([12 + min([7-bk.y, bk.y]) for bk in self.black_pieces if bk.king]) -\
+                       sum([12 + min([7-rk.y, rk.y]) for rk in self.red_pieces if rk.king])
+            else:
+
+                return sum([5 + r.y for r in self.red_pieces if not r.king]) -\
+                       sum([12 - b.y for b in self.black_pieces if not b.king]) +\
+                       sum([12 + min([7-rk.y, rk.y]) for rk in self.red_pieces if rk.king]) -\
+                       sum([12 + min([7-bk.y, bk.y]) for bk in self.black_pieces if bk.king])
         else:
-            return sum([7 for r in self.red_pieces if not r.king and r.y > 3]) +\
-                   sum([5 for r in self.red_pieces if not r.king and r.y < 4]) -\
-                   sum([7 for b in self.black_pieces if not b.king and b.y < 4]) -\
-                   sum([5 for b in self.black_pieces if not b.king and b.y > 3]) + \
-                   10 * self.red_kings - 10 * self.black_kings
+            total_dist = 0           
+            if self.computer_color == BLACK:
+                red_coord = np.array([[r.y, r.x] for r in self.red_pieces])  
+
+                for b in self.black_pieces:
+                    dist = np.mean(np.linalg.norm(red_coord - [b.y, b.x]))
+                    total_dist += dist
+                if self.black_kings >= self.red_kings:
+                    return -total_dist + 2*(len(self.black_pieces) - len(self.red_pieces))
+                else:
+                    return total_dist + 2*(len(self.black_pieces) - len(self.red_pieces)) 
+            else:
+                black_coord = np.array([[b.y, b.x] for b in self.black_pieces])
+                for r in self.red_pieces:
+                    dist = np.mean(np.linalg.norm(black_coord - [r.y, r.x]))
+                    total_dist += dist
+                if self.red_kings >= self.black_kings:
+                    return -total_dist + 2*(len(self.red_pieces) - len(self.black_pieces)) 
+                else:
+                    return total_dist + 2*(len(self.red_pieces) - len(self.black_pieces))
+                    
+                
 
 
 if __name__ == "__main__":
