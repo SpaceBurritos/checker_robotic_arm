@@ -107,10 +107,10 @@ class IK:
 
 if __name__ == "__main__":
     move = IK()
-    move.movePiece([0,1],[7,0])
-    move.movePiece([1,4],[5,3])
-    move.movePiece([1,6],[6,7])
-    move.movePiece([7,0],[0,1])
-    move.movePiece([5,3],[1,4])
-    move.movePiece([6,7],[1,6])
+    move.make_king([4,3],[3,2])
+    #move.movePiece([1,4],[5,3])
+    #move.movePiece([1,6],[6,7])
+    #move.movePiece([7,0],[0,1])
+    #move.movePiece([5,3],[1,4])
+    #move.movePiece([6,7],[1,6])
     #move.jumpPiece([6,6])
