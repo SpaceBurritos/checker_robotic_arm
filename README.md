@@ -1,5 +1,8 @@
 
 # Robotic Arm that plays Checkers
+
+The idea of this project was to get a better understanding of different topics related to robotics and to create a project without the direct help of external help (i.e following a tutorial/course, with the help of a tutor/teacher)
+
 I divided this project into 3 sections 
 
 ## 1. Computer Vision
